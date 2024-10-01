@@ -1,4 +1,7 @@
 **/**.pth
 **/**.pt
 **/**.pyc
+**/**.gz
+**/**.tar.gz
 data/
+dataset/

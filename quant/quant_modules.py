@@ -142,6 +142,7 @@ class QuantMatMul(nn.Module):
         if "log_quant" in input_quant_params_matmul:
             input_quant_params_matmul.pop("log_quant")
             self.quantizer_A = LogSqrt2Quantizer(**input_quant_params_matmul)
+            input_quant_params_matmul.pop("log_quant_scheme")
         else:
             self.quantizer_A = UniformQuantizer(**input_quant_params_matmul)
         self.quantizer_B = UniformQuantizer(**input_quant_params_matmul)

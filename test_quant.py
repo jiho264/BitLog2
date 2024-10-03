@@ -52,6 +52,19 @@ def get_args_parser():
     parser.add_argument(
         "--a_bits", default=4, type=int, help="bit-precision of activation"
     )
+    parser.add_argument(
+        "--log_quant_scheme",
+        default="bitlog2half16",
+        choices=[
+            # "Sqrt2_16",
+            "Sqrt2_17",  # Original RepQ-ViT
+            # "BitLog2_Single_16",
+            "BitLog2_Single_17",
+            "BitLog2_Half_16",
+            "BitLog2_Half_17",
+        ],
+        help="The Log eqaution of quantization. (default: sqrt2 == RepQ-ViT)",
+    )
 
     return parser
 
@@ -97,8 +110,12 @@ def main():
 
     wq_params = {"n_bits": args.w_bits, "channel_wise": True}
     aq_params = {"n_bits": args.a_bits, "channel_wise": False}
+    logq_params = {"log_quant_scheme": args.log_quant_scheme}
     q_model = quant_model(
-        model, input_quant_params=aq_params, weight_quant_params=wq_params
+        model,
+        input_quant_params=aq_params,
+        weight_quant_params=wq_params,
+        logq_params=logq_params,
     )
     q_model.to(device)
     q_model.eval()

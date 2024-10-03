@@ -6,10 +6,11 @@ from .quant_modules import QuantConv2d, QuantLinear, QuantMatMul
 from copy import deepcopy
 
 
-def quant_model(model, input_quant_params={}, weight_quant_params={}):
+def quant_model(model, input_quant_params={}, weight_quant_params={}, logq_params={}):
     # post-softmax
     input_quant_params_matmul2 = deepcopy(input_quant_params)
     input_quant_params_matmul2["log_quant"] = True
+    input_quant_params_matmul2["log_quant_scheme"] = logq_params["log_quant_scheme"]
 
     # SimQuant
     input_quant_params_channel = deepcopy(input_quant_params)

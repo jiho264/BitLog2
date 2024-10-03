@@ -205,7 +205,7 @@ class LogSqrt2Quantizer(nn.Module):
             x_int = torch.floor(x * int_max).to(torch.int32)
             x_int = x_int.clamp(0, int_max - 1)
 
-            x_q = (-self.int_log_quant_10x(x_int) // 10) * -10
+            x_q = (self.int_log_quant_10x(x_int) // 10) * 10
             x_dq = self.int_log_dequant_10x(x_q)
 
             if self.inited is False:

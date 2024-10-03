@@ -1,6 +1,10 @@
-## RepQ-ViT: Scale Reparameterization for Post-Training Quantization of Vision Transformers
+## BitLog2: A Log-Based 4-Bit Quantization for Attention Map Using Bit Shifting
+![img](BitLog2.png)
+- The 4-Bit Log-based Quantization mathod for attention map in Vision Transformer.
+- We use the Bit Shift Operation for computation of the Log2 and Exponential2. (Do not use the floating-point operation)
+- The Experiment is based on the [RepQ-ViT, CVPR2023](https://github.com/zkkli/RepQ-ViT), and we replaced only the Attention Map's quantization method.
 
-Below are instructions for reproducing the classification results of RepQ-ViT.
+Below are instructions for reproducing the classification results of BitLog2.
 
 ## Evaluation
 
@@ -15,29 +19,38 @@ optional arguments:
 --dataset: Path to ImageNet dataset.
 --w_bit: Bit-precision of weights, default=4.
 --a_bit: Bit-precision of activation, default=4.
+--log_quant_scheme: Log Quantization Method, default=Sqrt2_17 from RepQ-ViT.
+    Sqrt2_17, BitLog2_Single_17, BitLog2_Half_16, BitLog2_Half_17
 ```
 
 - Example: Quantize *DeiT-S* at W4/A4 precision:
 
 ```bash
-python test_quant.py --model deit_small --dataset <YOUR_DATA_DIR>
+python test_quant.py --model deit_small --dataset <YOUR_DATA_DIR> --log_quant_scheme BitLog2_Half_17
 ```
 
 ## Results
 
-Below are the experimental results of our proposed RepQ-ViT that you should get on ImageNet dataset.
+Below are the experimental results of our proposed BitLog2 that you should get on ImageNet dataset.
 
-|     Model      | Prec. | Top-1(%) | Prec. | Top-1(%) |
-| :------------: | :---: | :------: | :---: | :------: |
-| ViT-S (81.39)  | W4/A4 |  65.05   | W6/A6 |  80.43   |
-| ViT-B (84.54)  | W4/A4 |  68.48   | W6/A6 |  83.62   |
-| DeiT-T (72.21) | W4/A4 |  57.43   | W6/A6 |  70.76   |
-| DeiT-S (79.85) | W4/A4 |  69.03   | W6/A6 |  78.90   |
-| DeiT-B (81.80) | W4/A4 |  75.61   | W6/A6 |  81.27   |
-| Swin-T (81.35) | W4/A4 |  72.31   | W6/A6 |  80.69   |
-| Swin-S (83.23) | W4/A4 |  79.45   | W6/A6 |  82.79   |
+| Model  | FP32  | RepQ-ViT | Single_17 |  Half_17   | Half_16 |
+| :----: | :---: | :------: | :-------: | :--------: | :-----: |
+| ViT-S  | 81.39 |  65.05   |  64.456   | **65.874** | 64.580  |
+| ViT-B  | 84.54 |  68.48   |  66.824   | **68.900** | 67.482  |
+| DeiT-T | 72.21 |  57.43   |  57.096   | **58.346** | 57.664  |
+| DeiT-S | 79.85 |  69.03   |  68.716   | **69.554** | 69.432  |
+| DeiT-B | 81.80 |  75.61   |  75.482   | **75.836** | 75.554  |
 
-## Citation
+
+## Acknowledgement
+
+This experiment is based on the [RepQ-ViT, CVPR2023](https://github.com/zkkli/RepQ-ViT).
+
+
+<!-- | Swin-T (81.35) | W4/A4 |  72.31   | W6/A6 |  80.69   | -->
+<!-- | Swin-S (83.23) | W4/A4 |  79.45   | W6/A6 |  82.79   | -->
+
+<!-- ## Citation
 
 We appreciate it if you would please cite the following paper if you found the implementation useful for your work:
 
@@ -49,4 +62,4 @@ We appreciate it if you would please cite the following paper if you found the i
   pages={17227--17236},
   year={2023}
 }
-```
+``` -->

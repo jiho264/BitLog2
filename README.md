@@ -1,5 +1,6 @@
 ## BitLog2: A Log-Based 4-Bit Quantization for Attention Map Using Bit Shifting
 ![img](BitLog2.png)
+
 - The 4-Bit Log-based Quantization mathod for attention map in Vision Transformer.
 - Previously, RepQ-ViT employed a log base of √2 for quantizing the attention map.
 - The exact value of the integer part of log2(x) can be calculated using a bit shift operation, avoiding the need for floating-point operations.

@@ -4,7 +4,7 @@
 - The 4-Bit Log-based Quantization mathod for attention map in Vision Transformer.
 - Previously, RepQ-ViT employed a log base of √2 for quantizing the attention map.
 - The exact value of the integer part of log2(x) can be calculated using a bit shift operation, avoiding the need for floating-point operations.
-- We propose the BitLog2 Half, which separates the decimal part using bit shift operations. As a result, this achieves better accuracy than RepQ-ViT with using only Bit Shift operations.
+- **We propose the BitLog2 Half which separates the decimal part using bit shift operations. As a result, this achieves better accuracy than RepQ-ViT with using only Bit Shift operations.**
 - Our experiments are based on RepQ-ViT, CVPR2023, but we replaced only the quantization method for the attention map.
 
 Below are the instructions for reproducing the classification results of BitLog2.

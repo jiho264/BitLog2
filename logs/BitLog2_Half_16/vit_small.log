@@ -880,7 +880,7 @@ self.delta: 218.0
        device='cuda:0')
 Performing scale reparameterization ...
 Validating ...
-Test: [0/250]	Time 3.149 (3.149)	Loss 0.8334 (0.8334)	Prec@1 77.000 (77.000)	Prec@5 95.000 (95.000)
-Test: [100/250]	Time 0.840 (0.862)	Loss 1.5188 (1.1890)	Prec@1 56.500 (69.490)	Prec@5 89.000 (90.688)
+Test: [0/250]	Time 2.945 (2.945)	Loss 0.8334 (0.8334)	Prec@1 77.000 (77.000)	Prec@5 95.000 (95.000)
+Test: [100/250]	Time 0.840 (0.861)	Loss 1.5188 (1.1890)	Prec@1 56.500 (69.490)	Prec@5 89.000 (90.688)
 Test: [200/250]	Time 0.840 (0.851)	Loss 1.0661 (1.4629)	Prec@1 73.500 (65.107)	Prec@5 91.500 (86.759)
- * Prec@1 64.580 Prec@5 86.384 Time 212.279
+ * Prec@1 64.580 Prec@5 86.384 Time 212.179

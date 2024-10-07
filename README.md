@@ -48,7 +48,7 @@ Below are the experimental results of our proposed BitLog2 that you should get o
 ## Acknowledgement
 
 This experiment is based on the [RepQ-ViT, CVPR2023](https://github.com/zkkli/RepQ-ViT).
-
+Thanks to the author (zkkli) for providing the codebase.
 
 <!-- | Swin-T (81.35) | W4/A4 |  72.31   | W6/A6 |  80.69   | -->
 <!-- | Swin-S (83.23) | W4/A4 |  79.45   | W6/A6 |  82.79   | -->

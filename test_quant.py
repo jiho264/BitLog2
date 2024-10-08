@@ -54,7 +54,7 @@ def get_args_parser():
     )
     parser.add_argument(
         "--log_quant_scheme",
-        default="Sqrt2_17",
+        default="BitLog2_Half_17",
         choices=[
             "Sqrt2_16",
             "Sqrt2_17",  # Original RepQ-ViT

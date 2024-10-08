@@ -257,7 +257,7 @@ class LogSqrt2Quantizer(nn.Module):
                     out = x_dq * 1 / i
 
                     score = lp_loss(x, out, p=2, reduction="all")
-                    print(f"scale: {i}, score: {score}")
+                    # print(f"scale: {i}, score: {score}")
 
                     if score < best_score:
                         best_score = score
@@ -271,6 +271,7 @@ class LogSqrt2Quantizer(nn.Module):
                 print(x_q.unique().numel(), x_q.unique())
                 print(x_dq.unique().numel(), x_dq.unique())
                 print(x.unique().numel(), x.unique())
+                print()
                 if int_max == 384:
                     assert x.unique().numel() <= 17
                 elif int_max == 256:

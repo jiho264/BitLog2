@@ -1,16 +1,23 @@
-## BitLog2: A Log-Based 4-Bit Quantization for Attention Map Using Bit Shifting
+## (BETA) submission for 2024년도 추계종합학술발표회(KICS Fall conference 2024)
+- Not yet accepted for publication.
+
+# BitLog2: A Log-Based 4-Bit Quantization for Attention Map Using Bit Shifting
 ![img](BitLog2.png)
 
-- The 4-Bit Log-based Quantization mathod for attention map in Vision Transformer.
-- Previously, RepQ-ViT employed a log base of √2 for quantizing the attention map.
-- The exact value of the integer part of log2(x) can be calculated using a bit shift operation, avoiding the need for floating-point operations.
-- **We propose the BitLog2 Half which separates the decimal part using bit shift operations. As a result, this achieves better accuracy than RepQ-ViT with using only Bit Shift operations.**
-- Our experiments are based on RepQ-ViT, CVPR2023, but we replaced only the quantization method for the attention map.
+- The Log2-based quantization method for attention maps using only bit shift operations.
+- This experiment modifies only the quantization method of the attention map in the W4A4 quantization applied in [RepQ-ViT, CVPR2023](https://github.com/zkkli/RepQ-ViT).
+- (Left) BitLog2-single: Compute only integer part of log2(x) values using bit shift operations.
+- (Right) BitLog2-half: Addtionally, Separate decimal part of log2(x) values into half using bit shift operations.
 
-Below are the instructions for reproducing the classification results of BitLog2.
+## Abstract (English)
+Quantization of deep learning models is a technique that enables more efficient inference in environments with limited computing resources, and active research is ongoing in Vision Transformers as well. Particularly for attention maps, quantization methods based on logarithmic functions, which leverage the distribution characteristics of the values, have become mainstream. In the case of RepQ-ViT, quantization is designed under the premise that the logarithmic values are computed accurately up to the fractional part, which necessitates floating-point operations, making it difficult to apply in computing environments that only support integer operations. This paper proposes a quantization method called BitLog2, which calculates the log2 values of attention maps using only bit shift operations. Experimental results show that this method achieves slightly improved accuracy compared to RepQ-ViT, while excluding floating-point operations, thus addressing the mentioned limitations and achieving further advancements.
+
+## Abstract (Korean)
+딥러닝 모델의 양자화는 컴퓨팅 리소스가 제약적인 환경에서 보다 원활한 추론을 가능케하는 기술이며, 비전 트랜스포머에서도 관련 연구가 활발히 진행되고 있다. 특히 어텐션 맵 (attention map)에 대해서는 값의 분포 특성을 바탕으로, 로그 수식에 기반한 양자화 방법이 주류를 이룬다. RepQ-ViT의 경우, 로그 수식 값을 소수부까지 정확히 구한다는 전제 하에 양자화가 설계됨에 따라, 부동소수점 연산이 불가피하므로 정수 연산만을 지원하는 컴퓨팅 환경에서 적용이 어렵다. 본 논문은 어텐션 맵의 양자화에서 비트 시프트 연산만으로 log2의 값을 구한 양자화 방법 BitLog2를 제시한다. 실험결과 부동소수점 연산을 배제하면서도 RepQ-ViT 보다 소폭 향상된 정확도까지 얻었으므로, 언급한 제약조건을 해소하면서 발전을 이루었다.
 
 ## Evaluation
-
+- Our experiments are based on RepQ-ViT, CVPR2023, and we replaced only the quantization method for the attention map.
+- Below are the instructions for reproducing the classification results of BitLog2.
 - You can quantize and evaluate a single model using the following command:
 
 ```bash

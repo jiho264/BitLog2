@@ -210,8 +210,36 @@ class LogSqrt2Quantizer(nn.Module):
         # If x is [0, 1], then x * 256 -> [0, 256], but we clip it to [0, 255]
 
         if "BitLog2" in self.log_quant_scheme:
+            if self.inited is False:
+                best_score, best_q_scale, best_dq_scale = 1e10, self.int_max, 1
+                for i in torch.arange(256, self.int_max):
+                    for j in torch.arange(256, self.int_max):
+                        if i < j:
+                            continue
+                        x_int = torch.floor(x * i).to(torch.int32)
+                        x_int = x_int.clamp(0, 384 - 1)
+
+                        if "BitLog2_Single" in self.log_quant_scheme:
+                            x_q = (self.int_log_quant_10x(x_int) // 10) * 10
+                            x_dq = self.int_log_dequant_10x(x_q)
+
+                        elif "BitLog2_Half" in self.log_quant_scheme:
+                            x_q = self.int_log_quant_10x(x_int)
+                            x_dq = self.int_log_dequant_10x(x_q)
+
+                        out = x_dq * 1 / j
+                        score = lp_loss(x, out, p=2, reduction="all")
+                        if score < best_score:
+                            best_score, best_q_scale, best_dq_scale = score, i, j
+
+                self.int_max = best_q_scale
+                self.delta = best_dq_scale
+                print(
+                    f"self.int_max: {self.int_max} / self.delta: {self.delta} / best_score: {best_score}"
+                )
+
             x_int = torch.floor(x * self.int_max).to(torch.int32)
-            x_int = x_int.clamp(0, self.int_max - 1)
+            x_int = x_int.clamp(0, 384 - 1)
 
             if "BitLog2_Single" in self.log_quant_scheme:
                 x_q = (self.int_log_quant_10x(x_int) // 10) * 10
@@ -220,18 +248,6 @@ class LogSqrt2Quantizer(nn.Module):
             elif "BitLog2_Half" in self.log_quant_scheme:
                 x_q = self.int_log_quant_10x(x_int)
                 x_dq = self.int_log_dequant_10x(x_q)
-
-            if self.inited is False:
-                best_score, best_scale = 1e10, 1
-                for i in torch.arange(x_dq.max(), self.int_max):
-                    out = x_dq * 1 / i
-                    score = lp_loss(x, out, p=2, reduction="all")
-
-                    if score < best_score:
-                        best_score, best_scale = score, i
-                self.delta = best_scale
-                print(f"self.delta: {self.delta}")
-
             x = x_dq * 1 / self.delta
 
             if self.inited is False:

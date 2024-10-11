@@ -169,57 +169,80 @@ class LogSqrt2Quantizer(nn.Module):
         else:
             self.int_max = None
 
-    def int_log_quant_10x(self, x):
-        """when using 4Bit INT Log2 Quantization"""
-        x = x.to(torch.int32)
-        zero_mask = x == 0
-        log2_int = torch.full_like(x, -1, dtype=torch.int32)
+    def bitLog2Single(self, x):
+        # 1. mask 0
+        zeromask = x == 0
+        # 2. get bit length - 1 (same as the bit length for representation)
+        for i in torch.arange(0, 16):
+            x = torch.where(x.bitwise_right_shift(i) == 1, i, x)
+        # 3. -inf
+        x[zeromask] = -99999
+        x_q = x.clone().detach()
+        # 4. dequantize
+        x_dq = 2**x
+        x_dq[zeromask] = 0
 
-        temp_x = x.clone()
-        for i in range(15, -1, -1):
-            shift = 1 << i
-            greater_equal = temp_x >= shift
-            log2_int += greater_equal.to(torch.int32)
-            temp_x = temp_x >> greater_equal.to(torch.int32)
+        return x_q, x_dq
 
-        fractional_add = torch.zeros_like(x, dtype=torch.int32)
+    def bitLog2Half(self, x):
+        # 1. get log2(x)
+        x_q, _ = self.bitLog2Single(x)
 
-        temp_x = x - (1 << log2_int)
-        temp_x = temp_x << 1  # temp_x *= 2
-        fractional_add += (temp_x >= (1 << log2_int)).to(torch.int32) * 5
-        out = log2_int * 10 + fractional_add
-        out[zero_mask] = -99999
-        return out
+        def bitLog2Half_quant(x, x_q):
+            # 2. get the mask for 1 (1 is 0.5)
+            one_mask_half = x == 1
+            # 3. get the half value
+            x_temp = torch.where(
+                x.bitwise_right_shift(x_q - 1).bitwise_and(1) == 1, 5, 0
+            )
+            # 4. 1 is 0.5
+            x_temp[one_mask_half] = 5
+            # 5. get the quantized value (int_part * 10 + frac_part)
+            x_q_half = x_q * 10 + x_temp
+            return x_q_half
 
-    def int_log_dequant_10x(self, y):
-        """when using 4Bit INT Log2 Quantization"""
-        zero_mask = y < 0
+        def bitLog2Half_dequant(x_q_half):
+            # 1. get the mask for 0
+            zero_mask = x_q_half == 0
+            # 2. get the int part and frac part
+            int_part = x_q_half // 10
+            frac_part = x_q_half % 10 / 5
+            _one = torch.ones_like(int_part)
+            # 3. get the dequantized value
+            int_num = _one.bitwise_left_shift(int_part)
+            frac_num = frac_part * _one.bitwise_left_shift(int_part - 1)
+            x_dq_half = int_num + frac_num
+            x_dq_half[zero_mask] = 0
 
-        int_part = y // 10
-        frac_part = y % 10 / 5
+            return x_dq_half
 
-        int_num = 1 << int_part
-        frac_num = frac_part * (1 << (int_part - 1))
-        out = (int_num + frac_num).floor()
-        out[zero_mask] = 0
-        return out
+        x_q_half = bitLog2Half_quant(x, x_q)
+        x_dq_half = bitLog2Half_dequant(x_q_half)
+
+        return x_q_half, x_dq_half
 
     def forward_logquant(self, x: torch.Tensor):
-        # if x.max() >= 1:
-        # raise ValueError(f"Input should be normalized to [0, 1), max: {x.max()}")
-        # If x is [0, 1], then x * 256 -> [0, 256], but we clip it to [0, 255]
-
         if "BitLog2" in self.log_quant_scheme:
-            x_int = torch.floor(x * self.int_max).to(torch.int32)
-            x_int = x_int.clamp(0, self.int_max - 1)
+            """when using 4Bit INT Log2 Quantization"""
+            if self.log_quant_scheme == "BitLog2_Single_16":
+                int_max = 32768
+            elif self.log_quant_scheme == "BitLog2_Single_17":
+                int_max = 65536
+            elif self.log_quant_scheme == "BitLog2_Half_16":
+                int_max = 256
+            elif self.log_quant_scheme == "BitLog2_Half_17":
+                int_max = 384
+            else:
+                raise NotImplementedError
+
+            x_int = torch.floor(x * int_max).to(torch.int32)
+            x_int = x_int.clamp(0, int_max - 1)
 
             if "BitLog2_Single" in self.log_quant_scheme:
-                x_q = (self.int_log_quant_10x(x_int) // 10) * 10
-                x_dq = self.int_log_dequant_10x(x_q)
+                x_q, x_dq = self.bitLog2Single(x_int)
 
             elif "BitLog2_Half" in self.log_quant_scheme:
-                x_q = self.int_log_quant_10x(x_int)
-                x_dq = self.int_log_dequant_10x(x_q)
+                x_q, x_dq = self.bitLog2Half(x_int)
 
             if self.inited is False:
                 best_score, best_scale = 1e10, 1

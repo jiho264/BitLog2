@@ -206,7 +206,7 @@ class LogSqrt2Quantizer(nn.Module):
             zero_mask = x_q_half == 0
             # 2. get the int part and frac part
             int_part = x_q_half // 10
-            frac_part = x_q_half % 10 / 5
+            frac_part = x_q_half % 10 // 5
             _one = torch.ones_like(int_part)
             # 3. get the dequantized value
             int_num = _one.bitwise_left_shift(int_part)
@@ -223,20 +223,8 @@ class LogSqrt2Quantizer(nn.Module):
 
     def forward_logquant(self, x: torch.Tensor):
         if "BitLog2" in self.log_quant_scheme:
-            """when using 4Bit INT Log2 Quantization"""
-            if self.log_quant_scheme == "BitLog2_Single_16":
-                int_max = 32768
-            elif self.log_quant_scheme == "BitLog2_Single_17":
-                int_max = 65536
-            elif self.log_quant_scheme == "BitLog2_Half_16":
-                int_max = 256
-            elif self.log_quant_scheme == "BitLog2_Half_17":
-                int_max = 384
-            else:
-                raise NotImplementedError
-
-            x_int = torch.floor(x * int_max).to(torch.int32)
-            x_int = x_int.clamp(0, int_max - 1)
+            x_int = torch.floor(x * self.int_max).to(torch.int32)
+            x_int = x_int.clamp(0, self.int_max - 1)
 
             if "BitLog2_Single" in self.log_quant_scheme:
                 x_q, x_dq = self.bitLog2Single(x_int)

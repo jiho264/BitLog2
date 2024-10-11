@@ -205,6 +205,10 @@ class LogSqrt2Quantizer(nn.Module):
         return out
 
     def forward_logquant(self, x: torch.Tensor):
+        # if x.max() >= 1:
+        # raise ValueError(f"Input should be normalized to [0, 1), max: {x.max()}")
+        # If x is [0, 1], then x * 256 -> [0, 256], but we clip it to [0, 255]
+
         if "BitLog2" in self.log_quant_scheme:
             x_int = torch.floor(x * self.int_max).to(torch.int32)
             x_int = x_int.clamp(0, self.int_max - 1)

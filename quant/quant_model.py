@@ -56,7 +56,7 @@ def quant_model(model, input_quant_params={}, weight_quant_params={}, logq_param
                     input_quant_params_channel,
                     weight_quant_params,
                 )
-            if "fc2" in name:
+            elif "fc2" in name:
                 new_m = QuantLinear(
                     m.in_features,
                     m.out_features,

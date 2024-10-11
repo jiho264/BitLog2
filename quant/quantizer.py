@@ -157,6 +157,18 @@ class LogSqrt2Quantizer(nn.Module):
         self.channel_wise = channel_wise
         self.log_quant_scheme = log_quant_scheme
 
+        """when using 4Bit INT Log2 Quantization"""
+        if self.log_quant_scheme == "BitLog2_Single_16":
+            self.int_max = 32768
+        elif self.log_quant_scheme == "BitLog2_Single_17":
+            self.int_max = 65536
+        elif self.log_quant_scheme == "BitLog2_Half_16":
+            self.int_max = 256
+        elif self.log_quant_scheme == "BitLog2_Half_17":
+            self.int_max = 384
+        else:
+            self.int_max = None
+
     def int_log_quant_10x(self, x):
         """when using 4Bit INT Log2 Quantization"""
         x = x.to(torch.int32)
@@ -192,22 +204,10 @@ class LogSqrt2Quantizer(nn.Module):
         out[zero_mask] = 0
         return out
 
-    def forward(self, x: torch.Tensor):
+    def forward_logquant(self, x: torch.Tensor):
         if "BitLog2" in self.log_quant_scheme:
-            """when using 4Bit INT Log2 Quantization"""
-            if self.log_quant_scheme == "BitLog2_Single_16":
-                int_max = 32768
-            elif self.log_quant_scheme == "BitLog2_Single_17":
-                int_max = 65536
-            elif self.log_quant_scheme == "BitLog2_Half_16":
-                int_max = 256
-            elif self.log_quant_scheme == "BitLog2_Half_17":
-                int_max = 384
-            else:
-                raise NotImplementedError
-
-            x_int = torch.floor(x * int_max).to(torch.int32)
-            x_int = x_int.clamp(0, int_max - 1)
+            x_int = torch.floor(x * self.int_max).to(torch.int32)
+            x_int = x_int.clamp(0, self.int_max - 1)
 
             if "BitLog2_Single" in self.log_quant_scheme:
                 x_q = (self.int_log_quant_10x(x_int) // 10) * 10
@@ -219,8 +219,7 @@ class LogSqrt2Quantizer(nn.Module):
 
             if self.inited is False:
                 best_score, best_scale = 1e10, 1
-
-                for i in torch.arange(x_dq.max(), int_max):
+                for i in torch.arange(x_dq.max(), self.int_max):
                     out = x_dq * 1 / i
                     score = lp_loss(x, out, p=2, reduction="all")
 
@@ -236,13 +235,13 @@ class LogSqrt2Quantizer(nn.Module):
                 print(x_dq.unique().numel(), x_dq.unique())
                 print(x.unique().numel(), x.unique())
                 print()
-                if int_max == 65536:
+                if self.int_max == 65536:
                     assert x.unique().numel() <= 17
-                elif int_max == 32768:
+                elif self.int_max == 32768:
                     assert x.unique().numel() <= 16
-                elif int_max == 384:
+                elif self.int_max == 384:
                     assert x.unique().numel() <= 17
-                elif int_max == 256:
+                elif self.int_max == 256:
                     assert x.unique().numel() <= 16
                 self.inited = True
             return x
@@ -258,6 +257,23 @@ class LogSqrt2Quantizer(nn.Module):
             return x_dequant
         else:
             raise NotImplementedError
+
+    def forward(self, x: torch.Tensor):
+        if x.min() < 0:
+            # torch.save(x, "x.pt")
+            x = x + 0.17
+            x_max = x.max()
+            x = x / x_max
+
+            x = self.forward_logquant(x)
+            x = x * x_max
+            x = x - 0.17
+            # torch.save(x, "x_q_dq.pt")
+            # exit()
+        else:
+            x = self.forward_logquant(x)
+
+        return x
 
     def init_quantization_scale(self, x: torch.Tensor):
         delta = None

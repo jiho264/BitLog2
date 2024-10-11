@@ -91,7 +91,13 @@ class QuantLinear(nn.Linear):
     ):
         super(QuantLinear, self).__init__(in_features, out_features)
 
-        self.input_quantizer = UniformQuantizer(**input_quant_params)
+        input_quant_params_matmul = deepcopy(input_quant_params)
+        if "log_quant" in input_quant_params_matmul:
+            input_quant_params_matmul.pop("log_quant")
+            self.input_quantizer = LogSqrt2Quantizer(**input_quant_params_matmul)
+            input_quant_params_matmul.pop("log_quant_scheme")
+        else:
+            self.input_quantizer = UniformQuantizer(**input_quant_params_matmul)
         self.weight_quantizer = UniformQuantizer(**weight_quant_params)
 
         self.use_input_quant = False

@@ -193,51 +193,13 @@ class LogSqrt2Quantizer(nn.Module):
         return out
 
     def forward(self, x: torch.Tensor):
-        if "BitLog2_Single" in self.log_quant_scheme:
+        if "BitLog2" in self.log_quant_scheme:
             """when using 4Bit INT Log2 Quantization"""
             if self.log_quant_scheme == "BitLog2_Single_16":
                 int_max = 32768
             elif self.log_quant_scheme == "BitLog2_Single_17":
                 int_max = 65536
-            else:
-                raise NotImplementedError
-
-            x_int = torch.floor(x * int_max).to(torch.int32)
-            x_int = x_int.clamp(0, int_max - 1)
-
-            x_q = (self.int_log_quant_10x(x_int) // 10) * 10
-            x_dq = self.int_log_dequant_10x(x_q)
-
-            if self.inited is False:
-                best_score = 1e10
-                best_scale = 1
-                for i in torch.arange(x_dq.max(), int_max):
-                    out = x_dq * 1 / i
-                    score = lp_loss(x, out, p=2, reduction="all")
-
-                    if score < best_score:
-                        best_score = score
-                        best_scale = i
-                self.delta = best_scale
-                print(f"self.delta: {self.delta}")
-
-            x = x_dq * 1 / self.delta
-
-            if self.inited is False:
-                print(x_q.unique().numel(), x_q.unique())
-                print(x_dq.unique().numel(), x_dq.unique())
-                print(x.unique().numel(), x.unique())
-                if int_max == 65536:
-                    assert x.unique().numel() <= 17
-                elif int_max == 32768:
-                    assert x.unique().numel() <= 16
-                self.inited = True
-
-            return x
-
-        elif "BitLog2_Half" in self.log_quant_scheme:
-            """when using 4Bit INT Log2 Half Quantization"""
-            if self.log_quant_scheme == "BitLog2_Half_16":
+            elif self.log_quant_scheme == "BitLog2_Half_16":
                 int_max = 256
             elif self.log_quant_scheme == "BitLog2_Half_17":
                 int_max = 384
@@ -247,21 +209,23 @@ class LogSqrt2Quantizer(nn.Module):
             x_int = torch.floor(x * int_max).to(torch.int32)
             x_int = x_int.clamp(0, int_max - 1)
 
-            x_q = self.int_log_quant_10x(x_int)
-            x_dq = self.int_log_dequant_10x(x_q)
+            if "BitLog2_Single" in self.log_quant_scheme:
+                x_q = (self.int_log_quant_10x(x_int) // 10) * 10
+                x_dq = self.int_log_dequant_10x(x_q)
+
+            elif "BitLog2_Half" in self.log_quant_scheme:
+                x_q = self.int_log_quant_10x(x_int)
+                x_dq = self.int_log_dequant_10x(x_q)
 
             if self.inited is False:
-                best_score = 1e10
-                best_scale = 1
+                best_score, best_scale = 1e10, 1
+
                 for i in torch.arange(x_dq.max(), int_max):
                     out = x_dq * 1 / i
-
                     score = lp_loss(x, out, p=2, reduction="all")
-                    # print(f"scale: {i}, score: {score}")
 
                     if score < best_score:
-                        best_score = score
-                        best_scale = i
+                        best_score, best_scale = score, i
                 self.delta = best_scale
                 print(f"self.delta: {self.delta}")
 
@@ -272,12 +236,15 @@ class LogSqrt2Quantizer(nn.Module):
                 print(x_dq.unique().numel(), x_dq.unique())
                 print(x.unique().numel(), x.unique())
                 print()
-                if int_max == 384:
+                if int_max == 65536:
+                    assert x.unique().numel() <= 17
+                elif int_max == 32768:
+                    assert x.unique().numel() <= 16
+                elif int_max == 384:
                     assert x.unique().numel() <= 17
                 elif int_max == 256:
                     assert x.unique().numel() <= 16
                 self.inited = True
-
             return x
 
         elif "Sqrt2" in self.log_quant_scheme:

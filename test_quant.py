@@ -15,7 +15,7 @@ def get_args_parser():
     parser = argparse.ArgumentParser(description="RepQ-ViT", add_help=False)
     parser.add_argument(
         "--model",
-        default="deit_tiny",
+        default="vit_small",
         choices=[
             "vit_small",
             "vit_base",
@@ -53,9 +53,25 @@ def get_args_parser():
         "--a_bits", default=4, type=int, help="bit-precision of activation"
     )
     parser.add_argument(
-        "--log_quant_scheme",
-        default="BitLog2_Quarter_17",
+        "--log_quant_scheme_softmax",
+        default="BitLog2_Half_17",
         choices=[
+            "Sqrt2_16",
+            "Sqrt2_17",  # Original RepQ-ViT
+            "BitLog2_Single_16",
+            "BitLog2_Single_17",
+            "BitLog2_Half_16",
+            "BitLog2_Half_17",
+            "BitLog2_Quarter_16",
+            "BitLog2_Quarter_17",
+        ],
+        help="The Log eqaution of quantization. (default: sqrt2 == RepQ-ViT)",
+    )
+    parser.add_argument(
+        "--log_quant_scheme_gelu",
+        default="BitLog2_Single_17",
+        choices=[
+            "uniform",
             "Sqrt2_16",
             "Sqrt2_17",  # Original RepQ-ViT
             "BitLog2_Single_16",
@@ -112,7 +128,10 @@ def main():
 
     wq_params = {"n_bits": args.w_bits, "channel_wise": True}
     aq_params = {"n_bits": args.a_bits, "channel_wise": False}
-    logq_params = {"log_quant_scheme": args.log_quant_scheme}
+    logq_params = {
+        "log_quant_scheme_softmax": args.log_quant_scheme_softmax,
+        "log_quant_scheme_gelu": args.log_quant_scheme_gelu,
+    }
     q_model = quant_model(
         model,
         input_quant_params=aq_params,

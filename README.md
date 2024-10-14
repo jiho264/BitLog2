@@ -48,6 +48,8 @@ python test_quant.py --model deit_small --dataset <YOUR_DATA_DIR> --log_quant_sc
 
 Below are the experimental results of our proposed BitLog2 that you should get on ImageNet dataset.
 
+### Softmax
+
 | Model  | FP32  | RepQ-ViT | Single_17 |  Half_17   | Half_16 |
 | :----: | :---: | :------: | :-------: | :--------: | :-----: |
 | ViT-S  | 81.39 |  65.05   |  64.456   | **65.874** | 64.580  |
@@ -55,6 +57,28 @@ Below are the experimental results of our proposed BitLog2 that you should get o
 | DeiT-T | 72.21 |  57.43   |  57.096   | **58.346** | 57.664  |
 | DeiT-S | 79.85 |  69.03   |  68.716   | **69.554** | 69.432  |
 | DeiT-B | 81.80 |  75.61   |  75.482   | **75.836** | 75.554  |
+
+### Softmax + GELU with Combined scheme
+
+| Model  |  Softmax  |    GELU    |  Acc   |
+| :----: | :-------: | :--------: | :----: |
+| DeiT-T | Sqrt2_17  |  uniform   | 57.096 |
+| DeiT-T | Sqrt2_17  |  Sqrt2_17  | 61.632 |
+| DeiT-T | Single_17 | Single_17  | 58.066 |
+| DeiT-T |  Half_17  |  Sqrt2_17  | 62.008 |
+| DeiT-T |  Half_17  |  uniform   | 58.346 |
+| DeiT-T |  Half_17  | Single_17  | 58.938 |
+| DeiT-T |  Half_17  |  Half_17   | 61.510 |
+| ViT-S  |  Half_17  |  uniform   | 65.874 |
+| ViT-S  |  Half_17  | Single_17  | 64.066 |
+| ViT-S  |  Half_17  |  Half_17   | 56.944 |
+| ViT-S  |  Half_17  | Quarter_17 | 0.508  |
+| DeiT-T |  Half_17  | Quarter_17 | 10.086 |
+
+vit-s에서는 gelu까지하면 망가짐
+
+<!-- | DeiT-S |  Half_17  |  Half_17   | 71.540 | -->
+<!-- | DeiT-B |  Half_17  |  Half_17   | 73.616 | -->
 
 ## Acknowledgement
 

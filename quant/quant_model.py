@@ -10,11 +10,23 @@ def quant_model(model, input_quant_params={}, weight_quant_params={}, logq_param
     # post-softmax
     input_quant_params_matmul2 = deepcopy(input_quant_params)
     input_quant_params_matmul2["log_quant"] = True
-    input_quant_params_matmul2["log_quant_scheme"] = logq_params["log_quant_scheme"]
+    input_quant_params_matmul2["log_quant_scheme"] = logq_params[
+        "log_quant_scheme_softmax"
+    ]
+
+    # post-GELU
+    input_quant_params_matmul3 = deepcopy(input_quant_params)
+    input_quant_params_matmul3["log_quant"] = True
+    input_quant_params_matmul3["log_quant_scheme"] = logq_params[
+        "log_quant_scheme_gelu"
+    ]
 
     # SimQuant
     input_quant_params_channel = deepcopy(input_quant_params)
     input_quant_params_channel["channel_wise"] = True
+
+    if logq_params["log_quant_scheme_gelu"] is "uniform":
+        input_quant_params_matmul3 = deepcopy(input_quant_params)
 
     module_dict = {}
     for name, m in model.named_modules():
@@ -56,13 +68,13 @@ def quant_model(model, input_quant_params={}, weight_quant_params={}, logq_param
                     input_quant_params_channel,
                     weight_quant_params,
                 )
-            # elif "fc2" in name:
-            #     new_m = QuantLinear(
-            #         m.in_features,
-            #         m.out_features,
-            #         input_quant_params_matmul2,
-            #         weight_quant_params,
-            #     )
+            elif "fc2" in name:
+                new_m = QuantLinear(
+                    m.in_features,
+                    m.out_features,
+                    input_quant_params_matmul3,
+                    weight_quant_params,
+                )
             else:
                 new_m = QuantLinear(
                     m.in_features,

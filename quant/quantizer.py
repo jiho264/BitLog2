@@ -296,6 +296,11 @@ class LogSqrt2Quantizer(nn.Module):
             if self.inited is False:
                 print(x_q.unique().numel(), x_q.unique())
                 print(x_dq.unique().numel(), x_dq.unique())
+                # if x_dq.unique().numel() < 16:
+                #     dd = x_dq.unique().numel()
+                #     torch.save(x, f"x_{dd}.pt")
+                #     torch.save(x_dq, f"x_dq{dd}.pt")
+                #     exit()
                 print(x.unique().numel(), x.unique())
                 print()
                 if self.int_max == 65536:
@@ -323,7 +328,6 @@ class LogSqrt2Quantizer(nn.Module):
 
     def forward(self, x: torch.Tensor):
         if x.min() < 0:
-            # torch.save(x, "x.pt")
             x = x + 0.17
             x_max = x.max()
             x = x / x_max
@@ -331,8 +335,6 @@ class LogSqrt2Quantizer(nn.Module):
             x = self.forward_logquant(x)
             x = x * x_max
             x = x - 0.17
-            # torch.save(x, "x_q_dq.pt")
-            # exit()
         else:
             x = self.forward_logquant(x)
 

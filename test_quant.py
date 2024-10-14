@@ -54,7 +54,7 @@ def get_args_parser():
     )
     parser.add_argument(
         "--log_quant_scheme",
-        default="BitLog2_Half_17",
+        default="BitLog2_Quarter_17",
         choices=[
             "Sqrt2_16",
             "Sqrt2_17",  # Original RepQ-ViT
@@ -62,6 +62,8 @@ def get_args_parser():
             "BitLog2_Single_17",
             "BitLog2_Half_16",
             "BitLog2_Half_17",
+            "BitLog2_Quarter_16",
+            "BitLog2_Quarter_17",
         ],
         help="The Log eqaution of quantization. (default: sqrt2 == RepQ-ViT)",
     )

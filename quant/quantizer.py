@@ -166,6 +166,10 @@ class LogSqrt2Quantizer(nn.Module):
             self.int_max = 256
         elif self.log_quant_scheme == "BitLog2_Half_17":
             self.int_max = 384
+        elif self.log_quant_scheme == "BitLog2_Quarter_16":
+            self.int_max = 32
+        elif self.log_quant_scheme == "BitLog2_Quarter_17":
+            self.int_max = 40
         else:
             self.int_max = None
 
@@ -183,6 +187,47 @@ class LogSqrt2Quantizer(nn.Module):
         x_dq[zeromask] = 0
 
         return x_q, x_dq
+
+    def bitLog2Quanter(self, x):
+        def bitLog2Quarter_quant(x, x_q):
+            # 2. get the mask for 1 (1 is 0.5)
+            one_mask_half = x == 1
+            # 3. get the half value
+            x_temp5 = torch.where(
+                x.bitwise_right_shift(x_q - 1).bitwise_and(1) == 1, 1, 0
+            )
+            x_temp1 = torch.where(
+                x.bitwise_right_shift(x_q - 2).bitwise_and(1) == 1, 1, 0
+            )
+            # 4. 1 is 0.5
+            x_temp5[one_mask_half] = 1
+            # 5. get the quantized value (int_part * 10 + frac_part)
+            x_q_half = x_q * 100 + x_temp5 * 10 + x_temp1
+            return x_q_half
+
+        def bitLog2Quarter_dequant(x_q_half):
+            # 1. get the mask for 0
+            zero_mask = x_q_half == 0
+            # 2. get the int part and frac part
+            int_part = x_q_half // 100
+            frac_part5 = x_q_half % 100 // 10
+            frac_part1 = x_q_half % 100 % 10 // 1
+            _one = torch.ones_like(int_part)
+            # 3. get the dequantized value
+            int_num = _one.bitwise_left_shift(int_part)
+            frac_num5 = frac_part5 * _one.bitwise_left_shift(int_part - 1)
+            frac_num1 = frac_part1 * _one.bitwise_left_shift(int_part - 2)
+            x_dq_half = int_num + frac_num5 + frac_num1
+            x_dq_half[zero_mask] = 0
+
+            return x_dq_half
+
+        # 1. get log2(x)
+        x_q, _ = self.bitLog2Single(x)
+        x_q_quarter = bitLog2Quarter_quant(x, x_q)
+        x_dq_quarter = bitLog2Quarter_dequant(x_q_quarter)
+
+        return x_q_quarter, x_dq_quarter
 
     def bitLog2Half(self, x):
         # 1. get log2(x)
@@ -224,13 +269,16 @@ class LogSqrt2Quantizer(nn.Module):
     def forward_logquant(self, x: torch.Tensor):
         if "BitLog2" in self.log_quant_scheme:
             x_int = torch.floor(x * self.int_max).to(torch.int32)
-            x_int = x_int.clamp(0, self.int_max - 1)
+            x_int = x_int.clamp(0, self.int_max - 1)  # ensure the value's range
 
             if "BitLog2_Single" in self.log_quant_scheme:
                 x_q, x_dq = self.bitLog2Single(x_int)
-
             elif "BitLog2_Half" in self.log_quant_scheme:
                 x_q, x_dq = self.bitLog2Half(x_int)
+            elif "BitLog2_Quarter" in self.log_quant_scheme:
+                x_q, x_dq = self.bitLog2Quanter(x_int)
+            else:
+                raise NotImplementedError
 
             if self.inited is False:
                 best_score, best_scale = 1e10, 1

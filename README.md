@@ -1,5 +1,4 @@
-## Submission for 2024년도 추계종합학술발표회(KICS Fall conference 2024)
-
+## 2024 추계학술대회 (0273-QVCGS)
 # BitLog2: A Log-Based 4-Bit Quantization for Attention Map Using Bit Shifting
 ![img](BitLog2.png)
 
